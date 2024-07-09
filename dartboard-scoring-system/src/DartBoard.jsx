@@ -1,14 +1,19 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const canvas = document.getElementById('dartboard');
-    const ctx = canvas.getContext('2d');
-    const scoreDisplay = document.getElementById('score');
-    let currentScore = 0;
-    let currentPlayer = 1;
+import React, { useRef, useEffect, useState } from 'react';
 
-    function drawDartboard() {
-        // Rysowanie tarczy
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
+function Dartboard() {
+    const canvasRef = useRef(null);
+    const [currentScore, setCurrentScore] = useState(0);
+    const [currentPlayer, setCurrentPlayer] = useState(1);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        drawDartboard(ctx);
+    }, []);
+
+    const drawDartboard = (ctx) => {
+        const centerX = 451 / 2;
+        const centerY = 451 / 2;
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, 197.75, 0, 2 * Math.PI);
@@ -17,43 +22,36 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke(); 
 
 
-        // Sekcje punktowe
         const colors = ['white', 'black'];
         const colors2 = ['red', 'green'];
         const sectorPoints = [10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5, 20, 1, 18, 4, 13, 6];
         for (let i = 0; i < 20; i++) {
             const angle = ((i * 18) / 180 * Math.PI)+0.157;
             ctx.fillStyle = colors[i % 2];
-            // Main area
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, 170, angle, angle + Math.PI / 10);
-            ctx.lineTo(centerX, centerY);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'grey';
+            ctx.stroke();
             ctx.fill();
 
-            // Double ring
             ctx.beginPath();
-            //ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, 166, angle, angle + Math.PI / 10);
-           //ctx.lineTo(centerX, centerY);
             ctx.lineWidth = 8;
             ctx.strokeStyle = colors2[i % 2];
             ctx.stroke();
 
-            // Triple ring
             ctx.beginPath();
             ctx.arc(centerX, centerY, 103, angle, angle + Math.PI / 10);
             ctx.lineWidth = 8;
             ctx.strokeStyle = colors2[i % 2];
             ctx.stroke();
 
-
-            // Numbers
             ctx.fillStyle = 'white';
             ctx.font = '20px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-
             const numberRadius = 197.75;
             for (let i = 0; i < 20; i++) {
                 const angle = ((i * 18) / 180 * Math.PI) + Math.PI / 10 ;
@@ -65,31 +63,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
         }
-        // Bullseye
         ctx.fillStyle = 'red';
         ctx.beginPath();
         ctx.arc(centerX, centerY, 6.35, 0, 2 * Math.PI);
         ctx.fill();
 
-        // Outer bull
         ctx.beginPath();
         ctx.arc(centerX, centerY, 11.175, 0, 2 * Math.PI);
         ctx.lineWidth = 9.65;
         ctx.strokeStyle = 'green';
         ctx.stroke();
-       
 
-    }
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 171, Math.PI/20, 2 * Math.PI + Math.PI/20);
+        ctx.arc(centerX, centerY, 163, Math.PI/20, 2 * Math.PI + Math.PI/20);
+        ctx.arc(centerX, centerY, 108, Math.PI/20, 2 * Math.PI + Math.PI/20);
+        ctx.arc(centerX, centerY, 100, Math.PI/20, 2 * Math.PI + Math.PI/20);
+        ctx.arc(centerX, centerY, 16, Math.PI/20, 2 * Math.PI + Math.PI/20);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'grey';
+        ctx.stroke(); 
 
-    function calculatePoints(x, y) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 6.35, Math.PI/20, 2 * Math.PI + Math.PI/20);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'grey';
+        ctx.stroke(); 
+    };
+
+    const calculatePoints = (x, y) => {
         const centerX = 451/2;
         const centerY = 451/2;
         const radius = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
         const angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI + 189;
-
+        if (radius < 6.35) return 50;
         if (radius < 16) return 25;
 
-        const sectorPoints = [10, 14, 9, 12, 5, 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8];
+        const sectorPoints = [110, 14, 9, 12, 5, 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11];
         const sectorIndex = Math.floor((angle / 18));
         const points = sectorPoints[sectorIndex];
 
@@ -99,26 +109,32 @@ document.addEventListener('DOMContentLoaded', function() {
         if (radius <= 99) return points;
 
         return 0;
-    }
+    };
 
-    function updateScore() {
-        scoreDisplay.textContent = `Punkty Gracza ${currentPlayer}: ${currentScore}`;
-    }
+    const updateScore = (points) => {
+        setCurrentScore(currentScore + points);
+    };
 
-    canvas.addEventListener('click', function(event) {
-        const rect = canvas.getBoundingClientRect();
+    const handleCanvasClick = (event) => {
+        const rect = canvasRef.current.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         const points = calculatePoints(x, y);
-        currentScore += points;
-        updateScore();
-    });
+        updateScore(points);
+    };
 
-    document.getElementById('changePlayer').addEventListener('click', function() {
-        currentPlayer = currentPlayer === 1 ? 2 : 1;
-        currentScore = 0;
-        updateScore();
-    });
+    const handleChangePlayer = () => {
+        setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+        setCurrentScore(0);
+    };
 
-    drawDartboard();
-});
+    return (
+        <div>
+            <canvas ref={canvasRef} width="451" height="451" onClick={handleCanvasClick} />
+            <div id="score">Punkty Gracza {currentPlayer}: {currentScore}</div>
+            <button onClick={handleChangePlayer}>Zmień gracza</button>
+        </div>
+    );
+}
+
+export default Dartboard;
