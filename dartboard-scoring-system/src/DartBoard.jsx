@@ -29,25 +29,43 @@ function Dartboard() {
             const angle = ((i * 18) / 180 * Math.PI)+0.157;
             ctx.fillStyle = colors[i % 2];
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.arc(centerX, centerY, 170, angle, angle + Math.PI / 10);
+            ctx.moveTo(centerX + 18 * Math.cos(angle + (Math.PI / 180)/2), centerY + 18 * Math.sin(angle + (Math.PI / 180)/2));
+            ctx.arc(centerX, centerY, 99, angle + (Math.PI / 180)/2, angle + Math.PI / 10  - (Math.PI / 180)/2);
+            ctx.arc(centerX, centerY, 18, angle + Math.PI / 10  - (Math.PI / 180)/2, angle + (Math.PI / 180)/2, true);
             ctx.lineWidth = 4;
             ctx.strokeStyle = 'grey';
             ctx.stroke();
             ctx.fill();
 
             ctx.beginPath();
-            ctx.arc(centerX, centerY, 166, angle, angle + Math.PI / 10);
-            ctx.lineWidth = 8;
-            ctx.strokeStyle = colors2[i % 2];
+            ctx.moveTo(centerX + 107 * Math.cos(angle + (Math.PI / 180)/2), centerY + 107 * Math.sin(angle + (Math.PI / 180)/2));
+            ctx.arc(centerX, centerY, 162, angle + (Math.PI / 180)/2, angle + Math.PI / 10  - (Math.PI / 180)/2);
+            ctx.arc(centerX, centerY, 107, angle + Math.PI / 10  - (Math.PI / 180)/2, angle + (Math.PI / 180)/2, true);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'grey';
             ctx.stroke();
+            ctx.fill();
 
             ctx.beginPath();
-            ctx.arc(centerX, centerY, 103, angle, angle + Math.PI / 10);
-            ctx.lineWidth = 8;
-            ctx.strokeStyle = colors2[i % 2];
+            ctx.moveTo(centerX + 99 * Math.cos(angle + (Math.PI / 180)/2), centerY + 99 * Math.sin(angle + (Math.PI / 180)/2));
+            ctx.arc(centerX, centerY, 107, angle + (Math.PI / 180)/2, angle + Math.PI / 10  - (Math.PI / 180)/2);
+            ctx.arc(centerX, centerY, 99, angle + Math.PI / 10  - (Math.PI / 180)/2, angle + (Math.PI / 180)/2, true);
+            ctx.lineWidth = 4;
+            ctx.fillStyle = colors2[i % 2];
+            ctx.strokeStyle = 'grey';
             ctx.stroke();
-
+            ctx.fill();
+    
+            ctx.beginPath();
+            ctx.moveTo(centerX + 162 * Math.cos(angle + (Math.PI / 180)/2), centerY + 162 * Math.sin(angle + (Math.PI / 180)/2));
+            ctx.arc(centerX, centerY, 170, angle + (Math.PI / 180)/2, angle + Math.PI / 10  - (Math.PI / 180)/2);
+            ctx.arc(centerX, centerY, 162, angle + Math.PI / 10  - (Math.PI / 180)/2, angle + (Math.PI / 180)/2, true);
+            ctx.lineWidth = 4;
+            ctx.fillStyle = colors2[i % 2];
+            ctx.strokeStyle = 'grey';
+            ctx.stroke();
+            ctx.fill();
+    
             ctx.fillStyle = 'white';
             ctx.font = '20px Arial';
             ctx.textAlign = 'center';
@@ -59,36 +77,21 @@ function Dartboard() {
                 const y = centerY + Math.sin(angle) * numberRadius;
                 ctx.fillText(sectorPoints[i].toString(), x, y);
             }
-
-
-
         }
-        ctx.fillStyle = 'red';
+         
         ctx.beginPath();
         ctx.arc(centerX, centerY, 6.35, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
         ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 11.175, 0, 2 * Math.PI);
-        ctx.lineWidth = 9.65;
-        ctx.strokeStyle = 'green';
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 171, Math.PI/20, 2 * Math.PI + Math.PI/20);
-        ctx.arc(centerX, centerY, 163, Math.PI/20, 2 * Math.PI + Math.PI/20);
-        ctx.arc(centerX, centerY, 108, Math.PI/20, 2 * Math.PI + Math.PI/20);
-        ctx.arc(centerX, centerY, 100, Math.PI/20, 2 * Math.PI + Math.PI/20);
-        ctx.arc(centerX, centerY, 16, Math.PI/20, 2 * Math.PI + Math.PI/20);
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 4;
         ctx.strokeStyle = 'grey';
         ctx.stroke(); 
 
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 6.35, Math.PI/20, 2 * Math.PI + Math.PI/20);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'grey';
-        ctx.stroke(); 
+        ctx.arc(centerX, centerY,  6.35, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, 16, 0, 2 * Math.PI, true);
+        ctx.fillStyle = 'green';
+        ctx.fill();
     };
 
     const calculatePoints = (x, y) => {
@@ -96,17 +99,18 @@ function Dartboard() {
         const centerY = 451/2;
         const radius = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
         const angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI + 189;
-        if (radius < 6.35) return 50;
-        if (radius < 16) return 25;
+        
+        if (radius < 5.5) return 50;
+        if (radius < 17 && radius > 7) return 25;
 
-        const sectorPoints = [110, 14, 9, 12, 5, 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11];
+        const sectorPoints = [11, 14, 9, 12, 5, 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11];
         const sectorIndex = Math.floor((angle / 18));
         const points = sectorPoints[sectorIndex];
-
-        if (radius <= 170 && radius > 162) return points * 2;
-        if (radius <= 162 && radius > 107) return points;
+        
+        if (radius <= 170  && radius > 162) return points * 2;
+        if (radius <= 160 && radius > 109) return points;
         if (radius <= 107 && radius > 99) return points * 3;
-        if (radius <= 99) return points;
+        if (radius <= 99 && radius > 18) return points;
 
         return 0;
     };
