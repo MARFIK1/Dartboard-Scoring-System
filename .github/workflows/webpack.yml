@@ -26,3 +26,11 @@ jobs:
       run: |
         npm install
         npm run build
+
+    - name: Posify
+      run: |
+        mkdir -p app/views/{pages,layouts}
+        echo "{{content_for_layout}}" > app/views/layouts/application.html
+        cp -R build/static app/assets
+        cp build/index.html app/views/pages
+        sed -i -e 's/static/assets/g' app/views/pages/index.html
