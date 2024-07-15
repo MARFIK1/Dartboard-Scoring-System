@@ -38,4 +38,4 @@ jobs:
     - name: Install pos-cli and deploy
       run: |
         npm install -g @platformos/pos-cli
-        pos-cli deploy
+        pos-cli deploy staging
