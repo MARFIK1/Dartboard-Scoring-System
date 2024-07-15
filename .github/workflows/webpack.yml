@@ -34,3 +34,8 @@ jobs:
         cp -R build/static app/assets
         cp build/index.html app/views/pages
         sed -i -e 's/static/assets/g' app/views/pages/index.html
+
+    - name: Install pos-cli and deploy
+      run: |
+        npm install -g @platformos/pos-cli
+        pos-cli deploy
