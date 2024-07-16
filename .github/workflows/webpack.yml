@@ -39,7 +39,9 @@ jobs:
         cp -R build/static app/assets
         cp build/index.html app/views/pages
         sed -i -e 's/static/assets/g' app/views/pages/index.html
-
+        mkdir -p app/schema
+        echo "name: item\nproperties:\n  - name: title\n    type: string" > app/schema/item.yml
+        
     - name: Install pos-cli and deploy
       run: |
         npm install -g @platformos/pos-cli
