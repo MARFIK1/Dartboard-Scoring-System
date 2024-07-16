@@ -14,6 +14,11 @@ jobs:
       matrix:
         node-version: [18.x]
 
+    env:
+      MPKIT_TOKEN: ${{ secrets.MPKIT_TOKEN }}
+      MPKIT_URL: ${{ secrets.MPKIT_URL }}
+      MPKIT_EMAIL: ${{ secrets.MPKIT_EMAIL }}
+    
     steps:
     - uses: actions/checkout@v4
 
@@ -38,5 +43,4 @@ jobs:
     - name: Install pos-cli and deploy
       run: |
         npm install -g @platformos/pos-cli
-        pos-cli env add stg --url https://restless-firefly-72.staging.oregon.platform-os.com
-        pos-cli deploy stg
+        pos-cli deploy
