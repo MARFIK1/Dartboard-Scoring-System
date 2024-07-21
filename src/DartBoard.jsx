@@ -10,12 +10,10 @@ function Dartboard() {
         const savedCurrentPlayer = JSON.parse(localStorage.getItem('currentPlayer'));
         return savedCurrentPlayer || 1;
     });
-    const [throws, setThrows] = useState(() => {
-        const savedThrows = JSON.parse(localStorage.getItem('throws'));
-        return savedThrows || 0;
-    });
+    const [throws, setThrows] = useState(0);
     const [gameOver, setGameOver] = useState(false);
     const [winner, setWinner] = useState(null);
+    const [startRound, setStartRound] = useState(501);
 
     useEffect(() => {
         localStorage.setItem('dartScores', JSON.stringify(scores));
@@ -25,9 +23,6 @@ function Dartboard() {
         localStorage.setItem('currentPlayer', JSON.stringify(currentPlayer));
     }, [currentPlayer]);
 
-    useEffect(() => {
-        localStorage.setItem('throws', JSON.stringify(throws));
-    }, [throws]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -130,12 +125,20 @@ function Dartboard() {
         const sectorIndex = Math.floor((angle / 18));
         const points = sectorPoints[sectorIndex];
         
-        if (radius <= 170  && radius > 162) return points * 2;
-        if (radius <= 160 && radius > 109) return points;
-        if (radius <= 107 && radius > 99) return points * 3;
-        if (radius <= 99 && radius > 18) return points;
+        if (radius <= 170  && radius > 162) {
+            return { points: points * 2, isDouble: true };
+        }
+        if (radius <= 160 && radius > 109) {
+            return { points: points, isDouble: false };
+        }
+        if (radius <= 107 && radius > 99) {
+            return { points: points * 3, isDouble: false };
+        }
+        if (radius <= 99 && radius > 18) {
+            return { points: points, isDouble: false };
+        }
 
-        return 0;
+        return { points: 0, isDouble: false };
     };
 
     const handleCanvasClick = (event) => {
@@ -145,31 +148,50 @@ function Dartboard() {
         const rect = canvasRef.current.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
-        const points = calculatePoints(x, y);
+        const { points, isDouble } = calculatePoints(x, y);
         const newScores = { ...scores };
-
+        let i = 1;
         if (currentPlayer === 1) {
-            newScores.player1 = Math.max(newScores.player1 - points, 0);
-            if (newScores.player1 === 0) {
+            if(newScores.player1 - points === 0 && isDouble === true) {
                 setGameOver(true);
                 setWinner(1);
             }
+            else if(newScores.player1 - points > 1) {
+                newScores.player1 = newScores.player1 - points;
+            }
+            else {
+                newScores.player1 = startRound;
+                i = 3;
+            }
+
         } 
         else {
-            newScores.player2 = Math.max(newScores.player2 - points, 0);
-            if (newScores.player2 === 0) {
+            if(newScores.player2 - points === 0 && isDouble === true) {
                 setGameOver(true);
                 setWinner(2);
+            }
+            else if(newScores.player2 - points > 1) {
+                newScores.player2 = newScores.player2 - points;
+            }
+            else {
+                newScores.player2 = startRound;
+                i = 3;
             }
         }
 
         setScores(newScores);
-        setThrows(throws + 1);
+        setThrows(throws + i);
         drawDart(x, y);
 
-        if (throws === 2) {
+        if (throws + i > 2) {
             setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
             setThrows(0);
+            if (currentPlayer === 1) {
+                setStartRound(scores.player2);
+            }
+            if (currentPlayer === 2) {
+                setStartRound(scores.player1);
+            }
         }
     };
 
