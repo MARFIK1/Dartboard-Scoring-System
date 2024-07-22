@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 
 function Dartboard() {
     const canvasRef = useRef(null);
@@ -28,16 +28,30 @@ function Dartboard() {
         localStorage.setItem('currentPlayer', JSON.stringify(currentPlayer));
     }, [currentPlayer]);
 
+    const drawAllDarts = useCallback((ctx) => {
+        throwHistory.forEach((throwDetails) => {
+            drawDart(ctx, throwDetails.x, throwDetails.y, throwDetails.player);
+        });
+    }, [throwHistory]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         drawDartboard(ctx);
-    }, []);
+        drawAllDarts(ctx);
+    }, [drawAllDarts]);    
 
     useEffect(() => {
         localStorage.setItem('throwHistory', JSON.stringify(throwHistory));
     }, [throwHistory]);
+
+    useEffect(() => {
+        if (selectedThrow) {
+            const ctx = canvasRef.current.getContext('2d');
+            drawDartboard(ctx);
+            drawDart(ctx, selectedThrow.x, selectedThrow.y, selectedThrow.player);
+        }
+    }, [selectedThrow]);
 
     const drawDartboard = (ctx) => {
         const centerX = 451 / 2;
@@ -194,7 +208,7 @@ function Dartboard() {
 
         setScores(newScores);
         setThrows(throws + i);
-        drawDart(x, y, currentPlayer);
+        drawDart(canvasRef.current.getContext('2d'), x, y, currentPlayer);
 
         const newThrow = { player: currentPlayer, points: points, x, y };
         setThrowHistory([newThrow, ...throwHistory]);
@@ -211,8 +225,7 @@ function Dartboard() {
         }
     };
 
-    const drawDart = (x, y, player) => {
-        const ctx = canvasRef.current.getContext('2d');
+    const drawDart = (ctx, x, y, player) => {
         ctx.beginPath();
         ctx.arc(x, y, 3, 0, 2 * Math.PI);
         ctx.fillStyle = player === 1 ? 'orange' : 'blue';
@@ -238,18 +251,13 @@ function Dartboard() {
 
     const handleThrowClick = (throwDetails) => {
         setSelectedThrow(throwDetails);
-        const ctx = canvasRef.current.getContext('2d');
-        drawDartboard(ctx);
-        drawDart(throwDetails.x, throwDetails.y, throwDetails.player);
     };
 
     const handleShowAll = () => {
         setSelectedThrow(null);
         const ctx = canvasRef.current.getContext('2d');
         drawDartboard(ctx);
-        throwHistory.forEach((throwDetails) => {
-            drawDart(throwDetails.x, throwDetails.y, throwDetails.player);
-        });
+        drawAllDarts(ctx);
     };
 
     return (
