@@ -14,6 +14,11 @@ function Dartboard() {
     const [gameOver, setGameOver] = useState(false);
     const [winner, setWinner] = useState(null);
     const [startRound, setStartRound] = useState(501);
+    const [throwHistory, setThrowHistory] = useState(() => {
+        const savedHistory = JSON.parse(localStorage.getItem('throwHistory'));
+        return savedHistory || [];
+    });
+    const [selectedThrow, setSelectedThrow] = useState(null);
 
     useEffect(() => {
         localStorage.setItem('dartScores', JSON.stringify(scores));
@@ -30,9 +35,15 @@ function Dartboard() {
         drawDartboard(ctx);
     }, []);
 
+    useEffect(() => {
+        localStorage.setItem('throwHistory', JSON.stringify(throwHistory));
+    }, [throwHistory]);
+
     const drawDartboard = (ctx) => {
         const centerX = 451 / 2;
         const centerY = 451 / 2;
+
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, 197.75, 0, 2 * Math.PI);
@@ -90,7 +101,7 @@ function Dartboard() {
             ctx.textBaseline = 'middle';
             const numberRadius = 197.75;
             for (let i = 0; i < 20; i++) {
-                const angle = ((i * 18) / 180 * Math.PI) + Math.PI / 10 ;
+                const angle = ((i * 18) / 180 * Math.PI) + Math.PI / 10;
                 const x = centerX + Math.cos(angle) * numberRadius;
                 const y = centerY + Math.sin(angle) * numberRadius;
                 ctx.fillText(sectorPoints[i].toString(), x, y);
@@ -118,8 +129,10 @@ function Dartboard() {
         const radius = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
         const angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI + 189;
         
-        if (radius < 5.5) return 50;
-        if (radius < 17 && radius > 7) return 25;
+        if (radius < 5.5) { 
+            return { points: 50, isDouble: false }; }
+        if (radius < 17 && radius > 7) { 
+            return { points: 25, isDouble: false }; }
 
         const sectorPoints = [11, 14, 9, 12, 5, 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11];
         const sectorIndex = Math.floor((angle / 18));
@@ -181,7 +194,10 @@ function Dartboard() {
 
         setScores(newScores);
         setThrows(throws + i);
-        drawDart(x, y);
+        drawDart(x, y, currentPlayer);
+
+        const newThrow = { player: currentPlayer, points: points, x, y };
+        setThrowHistory([newThrow, ...throwHistory]);
 
         if (throws + i > 2) {
             setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
@@ -195,11 +211,11 @@ function Dartboard() {
         }
     };
 
-    const drawDart = (x, y) => {
+    const drawDart = (x, y, player) => {
         const ctx = canvasRef.current.getContext('2d');
         ctx.beginPath();
         ctx.arc(x, y, 3, 0, 2 * Math.PI);
-        ctx.fillStyle = currentPlayer === 1 ? 'orange' : 'blue';
+        ctx.fillStyle = player === 1 ? 'orange' : 'blue';
         ctx.fill();
     };
 
@@ -209,46 +225,90 @@ function Dartboard() {
         setThrows(0);
         setGameOver(false);
         setWinner(null);
+        setThrowHistory([]);
+        setSelectedThrow(null);
         localStorage.removeItem('dartScores');
         localStorage.removeItem('currentPlayer');
         localStorage.removeItem('throws');
+        localStorage.removeItem('throwHistory');
         const ctx = canvasRef.current.getContext('2d');
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         drawDartboard(ctx);
     };
-    
+
+    const handleThrowClick = (throwDetails) => {
+        setSelectedThrow(throwDetails);
+        const ctx = canvasRef.current.getContext('2d');
+        drawDartboard(ctx);
+        drawDart(throwDetails.x, throwDetails.y, throwDetails.player);
+    };
+
+    const handleShowAll = () => {
+        setSelectedThrow(null);
+        const ctx = canvasRef.current.getContext('2d');
+        drawDartboard(ctx);
+        throwHistory.forEach((throwDetails) => {
+            drawDart(throwDetails.x, throwDetails.y, throwDetails.player);
+        });
+    };
 
     return (
-        <div>
-            <button onClick={handleReset} style={{ position: 'absolute', top: 10, left: 10 }}>Reset</button>
-            <canvas ref={canvasRef} width="451" height="451" onClick={handleCanvasClick} />
-            <div id="score">
-                <div style={{ color: currentPlayer === 1 ? 'orange' : 'black' }}>
-                    Punkty gracza 1: {scores.player1}
-                    {currentPlayer === 1 && (
-                        <div>
-                            {[...Array(3 - throws)].map((_, i) => (
-                                <span key={i}>&#9679; </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div style={{ color: currentPlayer === 2 ? 'blue' : 'black' }}>
-                    Punkty gracza 2: {scores.player2}
-                    {currentPlayer === 2 && (
-                        <div>
-                            {[...Array(3 - throws)].map((_, i) => (
-                                <span key={i}>&#9679; </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                {gameOver && (
-                    <div>
-                        <h2>Gra zakończona!</h2>
-                        <p>Wygrał gracz {winner}!</p>
+        <div style={{ display: 'flex' }}>
+            <div>
+                <button onClick={handleReset} style={{ position: 'absolute', top: 10, left: 10 }}>Reset</button>
+                <canvas ref={canvasRef} width="451" height="451" onClick={handleCanvasClick} />
+                <div id="score">
+                    <div style={{ color: currentPlayer === 1 ? 'orange' : 'black' }}>
+                        Gracz 1: {scores.player1}
+                        {currentPlayer === 1 && (
+                            <div>
+                                {[...Array(3 - throws)].map((_, i) => (
+                                    <span key={i}>&#9679; </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
+                    <div style={{ color: currentPlayer === 2 ? 'blue' : 'black' }}>
+                        Gracz 2: {scores.player2}
+                        {currentPlayer === 2 && (
+                            <div>
+                                {[...Array(3 - throws)].map((_, i) => (
+                                    <span key={i}>&#9679; </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    {gameOver && (
+                        <div>
+                            <h2>Gra zakończona!</h2>
+                            <p>Wygrał gracz {winner}!</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div style={{ marginLeft: '50px', maxHeight: '510px', overflowY: 'auto', scrollbarWidth: 'none', width: '400px' }}>
+                <h3>Historia rzutów</h3>
+                <button onClick={handleShowAll}>Pokaż wszystkie</button>
+                <table border="1" style={{ width: '100%', marginTop: '50px' }}>
+                    <thead>
+                        <tr>
+                            <th>Gracz</th>
+                            <th>Punkty</th>
+                            <th>Akcja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {throwHistory.map((throwDetails, index) => (
+                            <tr key={index}>
+                                <td style={{ backgroundColor: throwDetails.player === 1 ? 'orange' : 'blue', color: 'white' }}>
+                                    {throwDetails.player}
+                                </td>
+                                <td>{throwDetails.points}</td>
+                                <td><button onClick={() => handleThrowClick(throwDetails)}>Pokaż</button></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
